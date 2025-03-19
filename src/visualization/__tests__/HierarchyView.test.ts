@@ -226,4 +226,78 @@ describe('HierarchyView', () => {
       expect(() => view.render(incompleteData)).not.toThrow();
     });
   });
+
+  // Helper function to generate large dataset
+  function generateLargeDataset(numLeafNodes: number): HierarchyNode {
+    const root: HierarchyNode = {
+      id: 'root',
+      name: 'Root',
+      state: 'normal',
+      children: []
+    };
+
+    // Create a balanced tree with approximately numLeafNodes leaf nodes
+    // Each non-leaf node will have 4 children
+    const numLevels = Math.ceil(Math.log(numLeafNodes) / Math.log(4));
+    
+    function addNodes(parent: HierarchyNode, level: number): void {
+      if (level >= numLevels) return;
+      
+      for (let i = 0; i < 4; i++) {
+        const child: HierarchyNode = {
+          id: `node-${level}-${i}`,
+          name: `Node ${level}-${i}`,
+          state: 'normal',
+          children: []
+        };
+        if (!parent.children) {
+          parent.children = [];
+        }
+        parent.children.push(child);
+        addNodes(child, level + 1);
+      }
+    }
+
+    addNodes(root, 0);
+    return root;
+  }
+
+  describe('performance', () => {
+    it('should handle large datasets (10,000+ nodes) efficiently', () => {
+      const view = new HierarchyView('test', 800, 600, jest.fn(), jest.fn());
+      const largeData = generateLargeDataset(10000);
+      
+      // Measure rendering time
+      const startTime = performance.now();
+      view.render(largeData);
+      const endTime = performance.now();
+      const renderTime = endTime - startTime;
+      
+      // Verify that D3 methods were called with the large dataset
+      expect(d3.hierarchy).toHaveBeenCalled();
+      expect(d3.tree).toHaveBeenCalled();
+      
+      // Log performance metrics
+      console.log(`Rendered ${10000}+ nodes in ${renderTime.toFixed(2)}ms`);
+      
+      // Performance threshold - adjust based on requirements
+      expect(renderTime).toBeLessThan(1000); // Should render in less than 1 second
+    });
+
+    it('should maintain smooth transitions with large datasets', () => {
+      const view = new HierarchyView('test', 800, 600, jest.fn(), jest.fn());
+      const largeData = generateLargeDataset(10000);
+      
+      // Initial render
+      view.render(largeData);
+      
+      // Verify transition duration is set appropriately
+      expect(mockSelection.transition).toHaveBeenCalled();
+      expect(mockSelection.duration).toHaveBeenCalledWith(750); // Default duration
+      
+      // Verify that transitions are applied to nodes and links
+      expect(mockSelection.attr).toHaveBeenCalled();
+      expect(mockSelection.style).toHaveBeenCalled();
+    });
+  });
 }); 
