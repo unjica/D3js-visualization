@@ -299,5 +299,71 @@ describe('HierarchyView', () => {
       expect(mockSelection.attr).toHaveBeenCalled();
       expect(mockSelection.style).toHaveBeenCalled();
     });
+
+    it('should have reasonable memory usage with large datasets', () => {
+      const view = new HierarchyView('test', 800, 600, jest.fn(), jest.fn());
+      
+      // Record initial memory usage
+      const initialMemory = process.memoryUsage();
+      
+      // Create and render large dataset
+      const largeData = generateLargeDataset(10000);
+      view.render(largeData);
+      
+      // Record memory usage after rendering
+      const finalMemory = process.memoryUsage();
+      
+      // Calculate memory differences (in MB)
+      const heapUsedDiff = (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
+      const rssUsedDiff = (finalMemory.rss - initialMemory.rss) / 1024 / 1024;
+      
+      // Log memory metrics
+      console.log(`Memory usage for 10,000+ nodes:
+        Heap Used Difference: ${heapUsedDiff.toFixed(2)} MB
+        RSS Difference: ${rssUsedDiff.toFixed(2)} MB`);
+      
+      // Memory thresholds - adjust based on requirements
+      expect(heapUsedDiff).toBeLessThan(50); // Should use less than 50MB additional heap
+      expect(rssUsedDiff).toBeLessThan(100); // Should use less than 100MB additional RSS
+    });
+
+    it('should clean up memory after removing nodes', () => {
+      const view = new HierarchyView('test', 800, 600, jest.fn(), jest.fn());
+      const largeData = generateLargeDataset(10000);
+      
+      // Record memory before any operations
+      const initialMemory = process.memoryUsage();
+      
+      // Render large dataset
+      view.render(largeData);
+      
+      // Record memory after rendering
+      const afterRenderMemory = process.memoryUsage();
+      
+      // Render smaller dataset to trigger cleanup
+      const smallData = generateLargeDataset(100);
+      view.render(smallData);
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc();
+      }
+      
+      // Record final memory usage
+      const finalMemory = process.memoryUsage();
+      
+      // Calculate memory differences (in MB)
+      const peakHeapDiff = (afterRenderMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
+      const finalHeapDiff = (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
+      
+      // Log memory cleanup metrics
+      console.log(`Memory cleanup test:
+        Peak Heap Usage: ${peakHeapDiff.toFixed(2)} MB
+        Final Heap Usage: ${finalHeapDiff.toFixed(2)} MB
+        Memory Recovered: ${(peakHeapDiff - finalHeapDiff).toFixed(2)} MB`);
+      
+      // Verify significant memory was recovered
+      expect(finalHeapDiff).toBeLessThan(peakHeapDiff * 0.5); // Should recover at least 50% of peak memory
+    });
   });
 }); 
