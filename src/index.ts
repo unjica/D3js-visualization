@@ -34,7 +34,7 @@ const manager = new HierarchyManager(sampleData);
 // Initialize context menu
 let activeNode: HierarchyNode | null = null;
 const contextMenu = new ContextMenu((newState) => {
-    if (activeNode) {
+    if (activeNode?.id) {
         manager.updateNodeState(activeNode.id, newState);
         view.render(manager.getRoot());
     }
@@ -46,7 +46,7 @@ const view = new HierarchyView(
     800,
     600,
     (node) => {
-        if (node.children) {
+        if (node.id) {
             manager.toggleNodeCollapse(node.id);
             view.render(manager.getRoot());
         }
