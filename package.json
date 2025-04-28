@@ -1,5 +1,5 @@
 {
-  "name": "zebra-bi-task",
+  "name": "d3js-hierarchical-data-visualization",
   "version": "1.0.0",
   "description": "Hierarchical data visualization with D3.js",
   "main": "index.js",

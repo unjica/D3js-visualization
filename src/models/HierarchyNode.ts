@@ -38,16 +38,20 @@ export class HierarchyManager {
     }
 
     private calculateNodeValue(node: HierarchyNode): number {
-        if (!node.children) {
-            return node.state === 'skipped' ? 0 :
-                   node.state === 'inverted' ? -(node.value || 0) :
-                   node.value || 0;
+        if (node.state === 'skipped') {
+            return 0;
         }
 
-        return node.children.reduce((sum, child) => {
+        if (!node.children) {
+            return node.state === 'inverted' ? -(node.value || 0) : node.value || 0;
+        }
+
+        const sum = node.children.reduce((sum, child) => {
             const childValue = this.calculateNodeValue(child);
             return sum + childValue;
         }, 0);
+
+        return node.state === 'inverted' ? -sum : sum;
     }
 
     private generateId(): string {
